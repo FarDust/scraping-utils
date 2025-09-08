@@ -1,0 +1,37 @@
+[project]
+name = "scraping_utils"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+authors = [
+    { name = "FarDust", email = "gabriel.faundez@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.13.5",
+    "httpx>=0.28.1",
+    "lxml>=6.0.1",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "sqlalchemy>=1.4.54",
+    "firecrawl-py>=4.3.6",
+    "graphviz>=0.21",
+]
+
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.12",
+]
+airflow = [
+    "apache-airflow[celery,postgres]>=3.0.6",
+    "apache-airflow-providers-amazon>=9.12.0",
+    "apache-airflow-providers-google>=17.1.0",
+    "apache-airflow-providers-http>=5.3.3",
+    "apache-airflow-providers-standard>=1.6.0",
+]
