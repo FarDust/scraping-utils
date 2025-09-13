@@ -36,6 +36,7 @@ class FirecrawlRepository(WebsiteRepository):
         scrape_options: dict[str, Any] | None = None,
         limit: int = 2,
         interval: int = 60,
+        timeout: int = 60
     ):
         """Initialize the GG.deals repository.
 
@@ -76,6 +77,7 @@ class FirecrawlRepository(WebsiteRepository):
 
         self.limit = limit
         self.interval = interval
+        self.timeout = timeout
 
     @backoff.on_exception(
         backoff.expo,
@@ -87,7 +89,10 @@ class FirecrawlRepository(WebsiteRepository):
         self._logger.info(f"Starting crawl for: {self.target_url}")
         try:
             crawl_job = self.firecrawl.crawl(
-                url=self.target_url, limit=self.limit, scrape_options=self.scrape_options
+                url=self.target_url,
+                limit=self.limit,
+                timeout=self.timeout,
+                scrape_options=self.scrape_options
             )
             self._logger.info(f"Crawl job status: {crawl_job.status}")
             return crawl_job
@@ -96,10 +101,10 @@ class FirecrawlRepository(WebsiteRepository):
             raise e
 
     async def crawl(self) -> list[WebsiteEntity]:
-        status = "scraping"
+        retry_count = 0
         crawl_job = await self._handle_crawl()
 
-        while status == crawl_job.status:
+        while "scraping" == crawl_job.status:
             crawl_job = await self._handle_crawl()
 
             if not crawl_job.status == "failed":
@@ -108,9 +113,11 @@ class FirecrawlRepository(WebsiteRepository):
             if not crawl_job.data:
                 raise CrawlingError(f"No data returned for URL: {self.target_url}")
 
-            status = crawl_job.status
-
             await asyncio.sleep(self.interval)
+
+            retry_count += 1
+            if retry_count > self.retries:
+                raise CrawlingError(f"Max retries exceeded for URL: {self.target_url}")
 
         entities: list[WebsiteEntity] = []
         for document in crawl_job.data:
