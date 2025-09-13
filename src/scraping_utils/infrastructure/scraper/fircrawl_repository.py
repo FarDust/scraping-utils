@@ -36,7 +36,8 @@ class FirecrawlRepository(WebsiteRepository):
         scrape_options: dict[str, Any] | None = None,
         limit: int = 2,
         interval: int = 60,
-        timeout: int = 60
+        timeout: int = 240,
+        
     ):
         """Initialize the GG.deals repository.
 
@@ -92,7 +93,8 @@ class FirecrawlRepository(WebsiteRepository):
                 url=self.target_url,
                 limit=self.limit,
                 timeout=self.timeout,
-                scrape_options=self.scrape_options
+                scrape_options=self.scrape_options,
+                poll_interval=10,
             )
             self._logger.info(f"Crawl job status: {crawl_job.status}")
             return crawl_job
