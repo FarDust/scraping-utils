@@ -17,6 +17,7 @@ dependencies = [
     "sqlalchemy>=1.4.54",
     "firecrawl-py>=4.3.6",
     "graphviz>=0.21",
+    "backoff>=2.2.1",
 ]
 
 

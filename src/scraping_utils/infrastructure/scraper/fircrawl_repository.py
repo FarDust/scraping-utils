@@ -9,6 +9,8 @@ from typing import Any
 from firecrawl import FirecrawlApp
 from firecrawl.types import ScrapeOptions
 
+import backoff
+
 from ...domain.entities.website import WebsiteEntity
 from ...domain.repositories.website_repository import WebsiteRepository
 
@@ -22,12 +24,16 @@ class CrawlingError(Exception):
 class FirecrawlRepository(WebsiteRepository):
     """Repository for crawling GG.deals using Firecrawl SDK."""
 
+    retries: int  = 3
+
     def __init__(
         self,
         base_url: str,
         target_url: str,
         api_key: str | None = None,
         scrape_options: dict[str, Any] | None = None,
+        limit: int = 2,
+        interval: int = 60, 
     ):
         """Initialize the GG.deals repository.
 
@@ -66,16 +72,29 @@ class FirecrawlRepository(WebsiteRepository):
             else scrape_options
         )
 
+        self.limit = limit
+        self.interval = interval
+
+
+    @backoff.on_exception(
+            backoff.expo,
+            Exception,
+            max_time=300,
+            max_tries=retries,
+    )
+    async def _handle_crawl(self):
+        crawl_job = self.firecrawl.crawl(
+            url=self.target_url, limit=self.limit, scrape_options=self.scrape_options
+        )
+        return crawl_job
+
+
     async def crawl(self) -> list[WebsiteEntity]:
         status = "scraping"
-        crawl_job = self.firecrawl.crawl(
-            url=self.target_url, limit=50, scrape_options=self.scrape_options
-        )
+        crawl_job = await self._handle_crawl()
 
         while status == crawl_job.status:
-            crawl_job = self.firecrawl.crawl(
-                url=self.target_url, limit=50, scrape_options=self.scrape_options
-            )
+            crawl_job = await self._handle_crawl()
 
             if not crawl_job.status == "failed":
                 raise CrawlingError(f"Failed to crawl URL {self.target_url}")
@@ -85,7 +104,7 @@ class FirecrawlRepository(WebsiteRepository):
 
             status = crawl_job.status
 
-            await asyncio.sleep(10)
+            await asyncio.sleep(self.interval)
 
         entities: list[WebsiteEntity] = []
         for document in crawl_job.data:

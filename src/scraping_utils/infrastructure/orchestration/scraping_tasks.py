@@ -22,7 +22,7 @@ from ...domain.entities.website import WebsiteEntity
 logger = logging.getLogger(__name__)
 
 
-def scrape_website(url: str, output_dir: str = "./data") -> str:
+def scrape_website(url: str, output_dir: str = "./data", scraping_args: dict[str, Any] | None = None) -> str:
     """Crawl website and save as JSON file.
 
     Parameters
@@ -31,6 +31,8 @@ def scrape_website(url: str, output_dir: str = "./data") -> str:
         Website URL to crawl
     output_dir : str, default "./data"
         Directory to save results
+    scraping_args: dict[str, Any]
+        Arguments to pass to the underlying scraper, that are not config based
 
     Returns
     -------
@@ -55,6 +57,13 @@ def scrape_website(url: str, output_dir: str = "./data") -> str:
         "www.gg.deals": GGDealsRepository,
     }
 
+    full_scraping_args: dict[str, Any] = {
+        "base_url": settings.firecrawl.base_url,
+        "target_url": url,
+        "api_key": settings.firecrawl.api_key,
+        **(scraping_args if scraping_args is not None else {}),
+    }
+
     # Select repository
     if domain in repository_map:
         repository_class = repository_map[domain]
@@ -63,11 +72,8 @@ def scrape_website(url: str, output_dir: str = "./data") -> str:
         repository_class = FirecrawlRepository
         logger.info(f"Using FirecrawlRepository for {domain}")
 
-    # Create repository and crawl
     repository = repository_class(
-        base_url=settings.firecrawl.base_url,
-        target_url=url,
-        api_key=settings.firecrawl.api_key,
+        **full_scraping_args
     )
 
     website_entities: list[WebsiteEntity] | None = asyncio.run(repository.get())
