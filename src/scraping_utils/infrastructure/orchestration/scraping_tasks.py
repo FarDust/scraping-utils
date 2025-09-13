@@ -1,5 +1,4 @@
-"""Web scraping tasks for Airflow.
-"""
+"""Web scraping tasks for Airflow."""
 
 import asyncio
 import json
@@ -22,7 +21,9 @@ from ...domain.entities.website import WebsiteEntity
 logger = logging.getLogger(__name__)
 
 
-def scrape_website(url: str, output_dir: str = "./data", scraping_args: dict[str, Any] | None = None) -> str:
+def scrape_website(
+    url: str, output_dir: str = "./data", scraping_args: dict[str, Any] | None = None
+) -> str:
     """Crawl website and save as JSON file.
 
     Parameters
@@ -72,9 +73,7 @@ def scrape_website(url: str, output_dir: str = "./data", scraping_args: dict[str
         repository_class = FirecrawlRepository
         logger.info(f"Using FirecrawlRepository for {domain}")
 
-    repository = repository_class(
-        **full_scraping_args
-    )
+    repository = repository_class(**full_scraping_args)
 
     website_entities: list[WebsiteEntity] | None = asyncio.run(repository.get())
     assert website_entities is not None

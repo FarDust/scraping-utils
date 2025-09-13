@@ -1,5 +1,4 @@
-"""SQLAlchemy models for web scraping data.
-"""
+"""SQLAlchemy models for web scraping data."""
 
 import uuid
 from sqlalchemy import Column, String, Text, DateTime, Index

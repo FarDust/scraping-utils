@@ -1,5 +1,4 @@
-"""Database models for the extraction library.
-"""
+"""Database models for the extraction library."""
 
 from .scraped_data import ScrapedData, Base
 

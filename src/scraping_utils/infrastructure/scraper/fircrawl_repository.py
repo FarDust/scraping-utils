@@ -3,13 +3,14 @@
 import asyncio
 import hashlib
 import uuid
+import backoff
 from datetime import datetime
 from typing import Any
 
 from firecrawl import FirecrawlApp
 from firecrawl.types import ScrapeOptions
+from logging import getLogger, Logger
 
-import backoff
 
 from ...domain.entities.website import WebsiteEntity
 from ...domain.repositories.website_repository import WebsiteRepository
@@ -24,7 +25,8 @@ class CrawlingError(Exception):
 class FirecrawlRepository(WebsiteRepository):
     """Repository for crawling GG.deals using Firecrawl SDK."""
 
-    retries: int  = 3
+    retries: int = 3
+    _logger: Logger = getLogger(__name__)
 
     def __init__(
         self,
@@ -33,7 +35,7 @@ class FirecrawlRepository(WebsiteRepository):
         api_key: str | None = None,
         scrape_options: dict[str, Any] | None = None,
         limit: int = 2,
-        interval: int = 60, 
+        interval: int = 60,
     ):
         """Initialize the GG.deals repository.
 
@@ -75,19 +77,19 @@ class FirecrawlRepository(WebsiteRepository):
         self.limit = limit
         self.interval = interval
 
-
     @backoff.on_exception(
-            backoff.expo,
-            Exception,
-            max_time=300,
-            max_tries=retries,
+        backoff.expo,
+        Exception,
+        max_time=300,
+        max_tries=retries,
     )
     async def _handle_crawl(self):
+        self._logger.info(f"Starting crawl for: {self.target_url}")
         crawl_job = self.firecrawl.crawl(
             url=self.target_url, limit=self.limit, scrape_options=self.scrape_options
         )
+        self._logger.info(f"Crawl job status: {crawl_job.status}")
         return crawl_job
-
 
     async def crawl(self) -> list[WebsiteEntity]:
         status = "scraping"

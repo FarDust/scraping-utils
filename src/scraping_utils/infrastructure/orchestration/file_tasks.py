@@ -1,5 +1,4 @@
-"""File processing tasks for Airflow.
-"""
+"""File processing tasks for Airflow."""
 
 import json
 import logging
