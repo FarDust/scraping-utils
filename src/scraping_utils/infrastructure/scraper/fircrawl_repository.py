@@ -85,11 +85,15 @@ class FirecrawlRepository(WebsiteRepository):
     )
     async def _handle_crawl(self):
         self._logger.info(f"Starting crawl for: {self.target_url}")
-        crawl_job = self.firecrawl.crawl(
-            url=self.target_url, limit=self.limit, scrape_options=self.scrape_options
-        )
-        self._logger.info(f"Crawl job status: {crawl_job.status}")
-        return crawl_job
+        try:
+            crawl_job = self.firecrawl.crawl(
+                url=self.target_url, limit=self.limit, scrape_options=self.scrape_options
+            )
+            self._logger.info(f"Crawl job status: {crawl_job.status}")
+            return crawl_job
+        except Exception as e:
+            self._logger.warning(f"Error occurred while crawling: {e}")
+            raise e
 
     async def crawl(self) -> list[WebsiteEntity]:
         status = "scraping"
